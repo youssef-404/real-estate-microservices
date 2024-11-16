@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, Utilisateur
 from datetime import datetime
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token,jwt_required,get_jwt_identity
 
 
 utilisateur_blueprint = Blueprint('utilisateur', __name__)
@@ -51,3 +51,80 @@ def login_user():
     token = create_access_token(identity=utilisateur.id)
 
     return jsonify({"token": token}), 200
+
+
+@utilisateur_blueprint.route('/users/<int:utilisateur_id>',methods=['GET'])
+@jwt_required()
+def get_user(utilisateur_id):
+    current_utilisateur_id = get_jwt_identity()
+
+    # l'utilisateur connecté ne peut récupérer que ses propres informations.
+    if utilisateur_id != current_utilisateur_id:
+        return jsonify({"error": "Accès refusé."}), 403
+    
+
+    utilisateur = Utilisateur.query.get(utilisateur_id)
+
+    if not utilisateur:
+        return jsonify({"error":"Utilisateur non trouvé."}),404
+    
+    
+    return jsonify({
+        "id":utilisateur.id,
+        "email":utilisateur.email,
+        "nom":utilisateur.nom,
+        "prenom":utilisateur.prenom,
+        "date_de_naissance":utilisateur.date_de_naissance.isoformat()
+    }),200
+
+
+@utilisateur_blueprint.route('/users/<int:utilisateur_id>', methods=['PUT'])
+@jwt_required()
+def update_user(utilisateur_id):
+    current_utilisateur_id = get_jwt_identity()
+    
+    # l'utilisateur connecté ne peut récupérer que ses propres informations.
+    if utilisateur_id != current_utilisateur_id:
+        return jsonify({"error": "Accès refusé."}), 403
+    
+    utilisateur = Utilisateur.query.get(utilisateur_id)
+
+    if not utilisateur:
+        return jsonify({"error": "Utilisateur non trouvé."}), 404
+
+
+    data = request.json
+    if data.get('nom'):
+        utilisateur.nom = data['nom']
+    if data.get('prenom'):
+        utilisateur.prenom = data['prenom']
+    if data.get('date_de_naissance'):
+        utilisateur.date_de_naissance = data['date_de_naissance']
+
+    db.session.commit()
+    return jsonify({"message": "Utilisateur mis à jour avec succès."}), 200
+
+
+
+
+@utilisateur_blueprint.route('/users/<int:utilisateur_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(utilisateur_id):
+    current_utilisateur_id = get_jwt_identity()
+    
+    # l'utilisateur connecté ne peut récupérer que ses propres informations.
+    if utilisateur_id != current_utilisateur_id:
+        return jsonify({"error": "Accès refusé."}), 403
+    
+    utilisateur = Utilisateur.query.get(utilisateur_id)
+
+    if not utilisateur:
+        return jsonify({"error": "Utilisateur non trouvé."}), 404
+
+
+    db.session.delete(utilisateur)
+    db.session.commit()
+
+    return jsonify({"message": "Utilisateur supprimé avec succès."}), 200
+
+
