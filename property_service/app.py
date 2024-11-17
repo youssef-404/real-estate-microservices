@@ -2,6 +2,7 @@ from flask import Flask
 from google.cloud import datastore
 from dotenv import load_dotenv
 from property_service.routes import property_blueprint
+from flask_jwt_extended import JWTManager
 import os
 
 load_dotenv()
@@ -9,6 +10,9 @@ load_dotenv()
 app = Flask(__name__)
 
 credentials_path =os.getenv("DATASTORE_CREDENTIALS")
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "default_jwt_secret")
+
+jwt = JWTManager(app)
 
 
 if not credentials_path:
