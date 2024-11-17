@@ -1,0 +1,6 @@
+.venv
+instance
+user_service/__pycache__
+user_service/.env
+tests/__pycache__
+.pytest_cache
