@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Utilisateur
+from user_service.models import db, Utilisateur
 from datetime import datetime
 from flask_jwt_extended import create_access_token,jwt_required,get_jwt_identity
 
@@ -63,7 +63,7 @@ def get_user(utilisateur_id):
         return jsonify({"error": "Accès refusé."}), 403
     
 
-    utilisateur = Utilisateur.query.get(utilisateur_id)
+    utilisateur = db.session.get(Utilisateur,utilisateur_id)
 
     if not utilisateur:
         return jsonify({"error":"Utilisateur non trouvé."}),404
@@ -87,7 +87,7 @@ def update_user(utilisateur_id):
     if utilisateur_id != current_utilisateur_id:
         return jsonify({"error": "Accès refusé."}), 403
     
-    utilisateur = Utilisateur.query.get(utilisateur_id)
+    utilisateur = db.session.get(Utilisateur,utilisateur_id)
 
     if not utilisateur:
         return jsonify({"error": "Utilisateur non trouvé."}), 404
@@ -116,7 +116,7 @@ def delete_user(utilisateur_id):
     if utilisateur_id != current_utilisateur_id:
         return jsonify({"error": "Accès refusé."}), 403
     
-    utilisateur = Utilisateur.query.get(utilisateur_id)
+    utilisateur = db.session.get(Utilisateur,utilisateur_id)
 
     if not utilisateur:
         return jsonify({"error": "Utilisateur non trouvé."}), 404
