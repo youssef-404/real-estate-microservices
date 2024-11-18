@@ -3,7 +3,7 @@ from property_service.app import app
 from unittest.mock import patch
 from flask_jwt_extended import create_access_token
 import json
-
+from unittest.mock import patch
 
 class MockKey:
     def __init__(self, id):
@@ -28,12 +28,18 @@ class MockProperty(dict):
 @pytest.fixture
 def client():
     app.config['TESTING']= True
-    
+    app.config['JWT_SECRET_KEY'] = 'test_secret_key'
     with app.test_client() as client: 
         yield client
 
-
-def test_create_property(client):
+@patch('requests.get')
+def test_create_property(mock_get,client):
+    #Simuler la réponse du service utilisateur pour la validation
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "valid": True,
+        "user": {"id": 2}
+    }
     with app.app_context():  # Assure app context pour create_access_token
         token = create_access_token(identity=2)
    
@@ -72,8 +78,7 @@ def test_create_property(client):
 
         # Vérifiez que la fonction simulée `create_property` a été appelée avec les arguments corrects
         mock_create_property.assert_called_once()
-
-
+        
 def test_get_property(client):
     with patch('property_service.routes.get_property') as mock_get_property:
         mock_get_property.return_value = MockProperty(
@@ -129,8 +134,14 @@ def test_list_properties_by_city(client):
         assert response.status_code == 200
      
 
-
-def test_update_property(client):
+@patch('requests.get')
+def test_update_property(mock_get,client):
+    #Simuler la réponse du service utilisateur pour la validation
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "valid": True,
+        "user": {"id": 2}
+    }
     with app.app_context():
         token = create_access_token(identity="2")
 
@@ -143,7 +154,7 @@ def test_update_property(client):
                 "description": "Superbe villa avec piscine et jardin tropical.",
                 "type_de_bien": "Maison individuelle",
                 "ville": "Nice",
-                "proprietaire": "2",
+                "proprietaire": 2,
             },
             id=123456789
         )
@@ -154,7 +165,7 @@ def test_update_property(client):
                 "description": "Superbe villa avec piscine et jardin tropical.",
                 "type_de_bien": "Maison individuelle",
                 "ville": "Nice",
-                "proprietaire": "2",
+                "proprietaire": 2,
             },
             id=123456789
         )
@@ -171,9 +182,14 @@ def test_update_property(client):
         mock_update_property.assert_called_once()
 
     
-
-
-def test_delete_property(client):
+@patch('requests.get')
+def test_delete_property(mock_get,client):
+    #Simuler la réponse du service utilisateur pour la validation
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "valid": True,
+        "user": {"id": 2}
+    }
     with app.app_context():
         token = create_access_token(identity="2")
 
@@ -186,7 +202,7 @@ def test_delete_property(client):
                 "description": "Superbe villa avec piscine et jardin tropical.",
                 "type_de_bien": "Maison individuelle",
                 "ville": "Nice",
-                "proprietaire": "2",
+                "proprietaire": 2,
             },
             id=123456789
         )
@@ -202,3 +218,18 @@ def test_delete_property(client):
         assert response.json == {"message": "Propriété supprimée avec succès."}
 
         mock_delete_property.assert_called_once()
+
+
+@patch('requests.get')
+def test_create_property_unauthorized(mock_get, client):
+    # Simuler la réponse du service utilisateur pour un jeton invalide
+    mock_get.return_value.status_code = 401
+
+    headers = {'Authorization': 'Bearer invalid_token'} 
+    payload = {"nom": "Villa", "description": "Nice villa", "type_de_bien": "Maison", "ville": "Paris"}
+
+    response = client.post('/properties', headers=headers, json=payload)
+
+    assert response.status_code == 401
+    assert response.json['error'] == "Non autorisé."
+    mock_get.assert_called_once()
