@@ -4,3 +4,7 @@ user_service/__pycache__
 user_service/.env
 tests/__pycache__
 .pytest_cache
+
+property_service/__pycache__
+property_service/.env
+property_service/datastoreconfig.json
