@@ -1,15 +1,27 @@
 from flask import Blueprint, request, jsonify, current_app
 from property_service.models import Property, create_property, list_properties,get_property, update_property ,delete_property
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import requests
 
 property_blueprint = Blueprint('property', __name__)
 
 
 @property_blueprint.route('/properties',methods=['POST'])
-@jwt_required()
 def add_property():
     client = current_app.config['DATASTORE_CLIENT']
     data = request.json
+
+    # Transférer l'en-tête d'autorisation au user_service
+    jwt_token = request.headers.get('Authorization')
+    user_service_url = current_app.config['USER_SERVICE_URL']
+
+    response = requests.get(f"{user_service_url}/users/validate",headers={"Authorization": jwt_token})
+    if response.status_code != 200 or not response.json().get("valid"):
+        return jsonify({"error": "Non autorisé."}), 401
+    
+
+    proprietaire = response.json()["user"]["id"]
+
 
     required_fields = ['nom','description','type_de_bien','ville']
 
@@ -18,7 +30,7 @@ def add_property():
             return jsonify({"error": f"Champ requis manquant : {field}"}),400
     
 
-    data['proprietaire'] = get_jwt_identity()
+    data['proprietaire'] = proprietaire
 
     # Créer un objet Propriété
     property_data = Property(
@@ -63,17 +75,26 @@ def get_property_by_id(property_id):
 
 
 @property_blueprint.route('/properties/<int:property_id>', methods=['PUT'])
-@jwt_required()
 def update_property_details(property_id):
     client = current_app.config['DATASTORE_CLIENT']
     data = request.json
+
+    # Transférer l'en-tête d'autorisation au user_service
+    jwt_token = request.headers.get('Authorization')
+    user_service_url = current_app.config['USER_SERVICE_URL']
+
+    response = requests.get(f"{user_service_url}/users/validate",headers={"Authorization": jwt_token})
+    if response.status_code != 200 or not response.json().get("valid"):
+        return jsonify({"error": "Non autorisé."}), 401
+  
 
     property_entity = get_property(client, property_id)
     if not property_entity:
         return jsonify({"error": "Propriété non trouvée."}), 404
     
+    proprietaire = response.json()["user"]["id"]
+
     # Valider la propriété
-    proprietaire = get_jwt_identity()
     if property_entity.get('proprietaire') != proprietaire:
         return jsonify({"error": "Vous n'êtes pas autorisé à mettre à jour cette propriété."}), 403
 
@@ -85,16 +106,25 @@ def update_property_details(property_id):
 
 
 @property_blueprint.route('/properties/<int:property_id>', methods=['DELETE'])
-@jwt_required()
 def delete_property_details(property_id):
     client = current_app.config['DATASTORE_CLIENT']
+
+    # Transférer l'en-tête d'autorisation au user_service
+    jwt_token = request.headers.get('Authorization')
+    user_service_url = current_app.config['USER_SERVICE_URL']
+
+    response = requests.get(f"{user_service_url}/users/validate",headers={"Authorization": jwt_token})
+    if response.status_code != 200 or not response.json().get("valid"):
+        return jsonify({"error": "Non autorisé."}), 401
+  
 
     property_entity = get_property(client, property_id)
     if not property_entity:
         return jsonify({"error": "Propriété non trouvée."}), 404
     
+    proprietaire = response.json()["user"]["id"]
+
     # Valider la propriété
-    proprietaire = get_jwt_identity()
     if property_entity.get('proprietaire') != proprietaire:
         return jsonify({"error": "Vous n'êtes pas autorisé à supprimer cette propriété."}), 403
 

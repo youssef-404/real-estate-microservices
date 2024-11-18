@@ -58,6 +58,10 @@ def login_user():
 def get_user(utilisateur_id):
     current_utilisateur_id = get_jwt_identity()
 
+    print(type(current_utilisateur_id),current_utilisateur_id)
+    print(type(utilisateur_id),utilisateur_id)
+
+
     # l'utilisateur connecté ne peut récupérer que ses propres informations.
     if utilisateur_id != current_utilisateur_id:
         return jsonify({"error": "Accès refusé."}), 403
@@ -127,4 +131,29 @@ def delete_user(utilisateur_id):
 
     return jsonify({"message": "Utilisateur supprimé avec succès."}), 200
 
+
+
+
+@utilisateur_blueprint.route('/users/validate', methods=['GET'])
+@jwt_required()
+def validate_user():
+    # Extraire l'ID utilisateur du JWT
+    utilisateur_id = get_jwt_identity()
+    
+    utilisateur = db.session.get(Utilisateur,utilisateur_id)
+
+    if not utilisateur:
+        return jsonify({"valid": False, "error": "Utilisateur non trouvé."}), 404
+
+    # Retourner les détails de l'utilisateur si valide
+    return jsonify({
+        "valid": True,
+        "user": {
+            "id": utilisateur.id,
+            "nom": utilisateur.nom,
+            "prenom": utilisateur.prenom,
+            "date_de_naissance": utilisateur.date_de_naissance,
+            "email": utilisateur.email
+        }
+    }), 200
 
