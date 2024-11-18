@@ -57,7 +57,9 @@ def get_property_by_id(property_id):
     if not property_entity:
         return jsonify({"error": "Propriété non trouvée."}), 404
 
-    return jsonify(dict(property_entity)), 200
+    property_data = dict(property_entity)
+    property_data["id"] = property_entity.key.id
+    return jsonify(property_data), 200
 
 
 @property_blueprint.route('/properties/<int:property_id>', methods=['PUT'])
