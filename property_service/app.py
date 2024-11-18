@@ -10,7 +10,7 @@ load_dotenv()
 app = Flask(__name__)
 
 credentials_path =os.getenv("DATASTORE_CREDENTIALS")
-app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "default_jwt_secret")
+app.config['USER_SERVICE_URL'] = os.getenv("USER_SERVICE_URL")
 
 jwt = JWTManager(app)
 
