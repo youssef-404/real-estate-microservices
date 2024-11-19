@@ -2,7 +2,6 @@ import pytest
 from property_service.app import app
 from unittest.mock import patch
 from flask_jwt_extended import create_access_token
-import json
 from unittest.mock import patch
 
 class MockKey:
@@ -28,7 +27,6 @@ class MockProperty(dict):
 @pytest.fixture
 def client():
     app.config['TESTING']= True
-    app.config['JWT_SECRET_KEY'] = 'test_secret_key'
     with app.test_client() as client: 
         yield client
 
@@ -40,8 +38,6 @@ def test_create_property(mock_get,client):
         "valid": True,
         "user": {"id": 2}
     }
-    with app.app_context():  # Assure app context pour create_access_token
-        token = create_access_token(identity=2)
    
     # Simuler la fonction `create_property` utilisée dans la route
     with patch('property_service.routes.create_property') as mock_create_property :
@@ -49,7 +45,7 @@ def test_create_property(mock_get,client):
         mock_create_property.return_value = mock_entity = type('MockEntity', (), {'id': 123456789})
     
         # En-tête d'autorisation
-        headers = {'Authorization' : f'Bearer {token}'}
+        headers = {'Authorization' : f'Bearer test.jwt.token'}
 
         payload = {
             "nom": "Villa Paradis",
@@ -142,8 +138,6 @@ def test_update_property(mock_get,client):
         "valid": True,
         "user": {"id": 2}
     }
-    with app.app_context():
-        token = create_access_token(identity="2")
 
     with patch('property_service.routes.get_property') as mock_get_property, \
          patch('property_service.routes.update_property') as mock_update_property:
@@ -171,7 +165,7 @@ def test_update_property(mock_get,client):
         )
 
 
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {'Authorization': f'Bearer test.jwt.token'}
 
         payload = {"nom": "Updated Villa Paradis"}
         
@@ -190,8 +184,6 @@ def test_delete_property(mock_get,client):
         "valid": True,
         "user": {"id": 2}
     }
-    with app.app_context():
-        token = create_access_token(identity="2")
 
     with patch('property_service.routes.get_property') as mock_get_property, \
          patch('property_service.routes.delete_property') as mock_delete_property:
@@ -209,7 +201,7 @@ def test_delete_property(mock_get,client):
 
         mock_delete_property.return_value = True
 
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {'Authorization': f'Bearer test.jwt.token'}
 
         response = client.delete('/properties/123456789', headers=headers)
 

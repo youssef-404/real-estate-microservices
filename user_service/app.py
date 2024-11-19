@@ -1,32 +1,41 @@
+"""
+Application principale pour le service utilisateur.
+
+Ce fichier configure l'application Flask, initialise les extensions nécessaires et enregistre les routes pour les utilisateurs.
+
+Points principaux :
+- Chargement de la configuration.
+- Initialisation de la base de données.
+- Enregistrement des blueprints.
+"""
+
+
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from user_service.models import db, bcrypt
-from user_service.routes import utilisateur_blueprint
-from user_service.config import Config, TestConfig
-from dotenv import load_dotenv
-import os
+from user_service.routes import user_blueprint
+from user_service.config import Config
 
-load_dotenv()
-
+# Création de l'application Flask
 app = Flask(__name__)
 
-if app.config['TESTING']:
-    app.config.from_object(TestConfig)
-else:
-    app.config.from_object(Config)
+# Chargement de la configuration
+app.config.from_object(Config)
 
+# Initialisation des extensions
 db.init_app(app)
 bcrypt.init_app(app)
 jwt = JWTManager(app)
 
-app.register_blueprint(utilisateur_blueprint)
+# Enregistrement des routes 
+app.register_blueprint(user_blueprint)
 
-
+# Création des tables dans la base de données si elles n'existent pas
 with app.app_context():
     db.create_all()
 
 
-    
+# Route pour vérifier l'état de l'application
 @app.route('/',methods=['GET'])
 def health_check():
     return {"status":"healthy"},200

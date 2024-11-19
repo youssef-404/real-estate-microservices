@@ -1,10 +1,9 @@
-.venv
+venv
+user_service/venv_user
+property_service/venv_property
 instance
-user_service/__pycache__
-user_service/.env
-tests/__pycache__
+*/instance
+*/__pycache__
+*/.env
 .pytest_cache
-
-property_service/__pycache__
-property_service/.env
 property_service/datastoreconfig.json
